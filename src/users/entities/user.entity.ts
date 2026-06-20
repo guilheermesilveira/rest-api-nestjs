@@ -9,6 +9,7 @@ import {
 
 export enum UserRole {
   ADMIN = 'ADMIN',
+  USER = 'USER',
 }
 
 @Entity('users')
@@ -26,7 +27,7 @@ export class User {
   passwordHash: string;
 
   @Column({
-    default: UserRole.ADMIN,
+    default: UserRole.USER,
     enum: UserRole,
     type: 'enum',
   })

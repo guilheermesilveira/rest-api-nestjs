@@ -7,6 +7,7 @@ import { UsersService } from '../../users/users.service';
 
 type JwtPayload = {
   email: string;
+  role: string;
   sub: string;
 };
 
@@ -28,7 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.usersService.findActiveById(payload.sub);
 
     if (!user) {
-      throw new UnauthorizedException('Token invalido.');
+      throw new UnauthorizedException('Token inválido.');
     }
 
     return user;

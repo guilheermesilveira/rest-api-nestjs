@@ -1,8 +1,25 @@
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { ValidationError } from 'class-validator';
 import { AppModule } from './app.module';
+
+const getValidationMessages = (errors: ValidationError[]): string[] => {
+  return errors.flatMap((error) => {
+    const messages = Object.entries(error.constraints ?? {}).map(
+      ([constraint, message]) => {
+        if (constraint === 'whitelistValidation') {
+          return `O campo ${error.property} não é permitido.`;
+        }
+
+        return message;
+      },
+    );
+
+    return [...messages, ...getValidationMessages(error.children ?? [])];
+  });
+};
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +28,12 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({
+      exceptionFactory: (errors) =>
+        new BadRequestException({
+          error: 'Requisição inválida',
+          message: getValidationMessages(errors),
+          statusCode: 400,
+        }),
       forbidNonWhitelisted: true,
       transform: true,
       whitelist: true,
@@ -18,8 +41,10 @@ async function bootstrap() {
   );
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('User Management API')
-    .setDescription('API REST para gestao de usuarios administradores.')
+    .setTitle('API de Gerenciamento de Usuários')
+    .setDescription(
+      'API REST para gestão de usuários com autenticação JWT e autorização por perfil.',
+    )
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();

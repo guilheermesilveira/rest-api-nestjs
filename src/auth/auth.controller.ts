@@ -1,5 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -17,9 +18,10 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  @ApiOperation({ summary: 'Autenticar administrador' })
+  @ApiOperation({ summary: 'Autenticar usuário' })
+  @ApiBadRequestResponse({ description: 'Dados da requisição inválidos.' })
   @ApiOkResponse({ type: LoginResponseDto })
-  @ApiUnauthorizedResponse({ description: 'Credenciais invalidas.' })
+  @ApiUnauthorizedResponse({ description: 'Credenciais inválidas.' })
   login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     return this.authService.login(loginDto);
   }

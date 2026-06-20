@@ -8,6 +8,7 @@ import { UsersService } from '../users/users.service';
 
 type JwtPayload = {
   email: string;
+  role: string;
   sub: string;
 };
 
@@ -25,7 +26,7 @@ export class AuthService {
     );
 
     if (!user) {
-      throw new UnauthorizedException('Credenciais invalidas.');
+      throw new UnauthorizedException('Credenciais inválidas.');
     }
 
     const passwordMatches = await bcrypt.compare(
@@ -34,11 +35,12 @@ export class AuthService {
     );
 
     if (!passwordMatches) {
-      throw new UnauthorizedException('Credenciais invalidas.');
+      throw new UnauthorizedException('Credenciais inválidas.');
     }
 
     const payload: JwtPayload = {
       email: user.email,
+      role: user.role,
       sub: user.id,
     };
 

@@ -11,7 +11,7 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 
 type DriverError = {
   code?: string;
@@ -32,10 +32,18 @@ export class UsersService implements OnModuleInit {
   }
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
+    return this.createWithRole(createUserDto, UserRole.USER);
+  }
+
+  private async createWithRole(
+    createUserDto: CreateUserDto,
+    role: UserRole,
+  ): Promise<UserResponseDto> {
     const user = this.usersRepository.create({
       email: this.normalizeEmail(createUserDto.email),
       name: createUserDto.name.trim(),
       passwordHash: await this.hashPassword(createUserDto.password),
+      role,
     });
 
     try {
@@ -43,7 +51,7 @@ export class UsersService implements OnModuleInit {
       return new UserResponseDto(savedUser);
     } catch (error) {
       if (this.isUniqueViolation(error)) {
-        throw new ConflictException('Ja existe um usuario com este e-mail.');
+        throw new ConflictException('Já existe um usuário com este e-mail.');
       }
 
       throw error;
@@ -104,14 +112,38 @@ export class UsersService implements OnModuleInit {
       return new UserResponseDto(savedUser);
     } catch (error) {
       if (this.isUniqueViolation(error)) {
-        throw new ConflictException('Ja existe um usuario com este e-mail.');
+        throw new ConflictException('Já existe um usuário com este e-mail.');
       }
 
       throw error;
     }
   }
 
-  async softDelete(id: string): Promise<void> {
+  async promoteToAdmin(id: string): Promise<UserResponseDto> {
+    const user = await this.findUserById(id);
+
+    if (user.role === UserRole.ADMIN) {
+      throw new ConflictException('O usuário informado já é administrador.');
+    }
+
+    user.role = UserRole.ADMIN;
+
+    const savedUser = await this.usersRepository.save(user);
+    return new UserResponseDto(savedUser);
+  }
+
+  async activate(id: string): Promise<UserResponseDto> {
+    const user = await this.findUserById(id, true);
+
+    if (user.deletedAt === null) {
+      return new UserResponseDto(user);
+    }
+
+    const activatedUser = await this.usersRepository.recover(user);
+    return new UserResponseDto(activatedUser);
+  }
+
+  async deactivate(id: string): Promise<void> {
     const user = await this.findUserById(id);
     await this.usersRepository.softRemove(user);
   }
@@ -126,7 +158,7 @@ export class UsersService implements OnModuleInit {
     });
 
     if (!user) {
-      throw new NotFoundException('Usuario nao encontrado.');
+      throw new NotFoundException('Usuário não encontrado.');
     }
 
     return user;
@@ -150,11 +182,14 @@ export class UsersService implements OnModuleInit {
       return;
     }
 
-    await this.create({
-      email,
-      name,
-      password,
-    });
+    await this.createWithRole(
+      {
+        email,
+        name,
+        password,
+      },
+      UserRole.ADMIN,
+    );
   }
 
   private hashPassword(password: string): Promise<string> {

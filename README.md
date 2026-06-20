@@ -1,16 +1,23 @@
 # REST API com NestJS
 
-API REST para gestão de usuários administradores, desenvolvida com NestJS,
-PostgreSQL, autenticação JWT, validação de DTOs e documentação Swagger.
+API REST para gestão de usuários, desenvolvida com NestJS, PostgreSQL,
+autenticação JWT, autorização por perfil, validação de DTOs e documentação
+Swagger.
 
 ## Objetivo
 
 O projeto fornece uma API para que um administrador autenticado possa cadastrar,
-editar, listar, consultar e desativar usuários. A desativação utiliza soft delete,
-preservando os registros no banco de dados.
+editar, listar, consultar, promover, desativar e reativar usuários. A
+desativação utiliza soft delete, preservando os registros no banco de dados.
 
-Existe apenas um perfil de acesso: administrador. Todas as rotas são protegidas
-por JWT, exceto a rota de autenticação.
+Existem dois perfis de acesso:
+
+- `ADMIN`: pode acessar as rotas de gerenciamento de usuários.
+- `USER`: pode apenas realizar autenticação.
+
+O administrador inicial é criado automaticamente pela aplicação. Depois disso,
+todo usuário cadastrado por um administrador é criado com o perfil `USER`. Para
+tornar um usuário administrador, use o endpoint específico de promoção.
 
 ## Pré-requisitos
 
@@ -44,8 +51,8 @@ Principais variáveis:
 | `ADMIN_EMAIL` | E-mail do administrador inicial |
 | `ADMIN_PASSWORD` | Senha do administrador inicial |
 
-Ao subir a aplicação, o administrador inicial é criado automaticamente quando o
-e-mail configurado em `ADMIN_EMAIL` ainda não existe.
+Ao subir a aplicação, o administrador inicial é criado automaticamente com o
+perfil `ADMIN` quando o e-mail configurado em `ADMIN_EMAIL` ainda não existe.
 
 ## Execução local
 
@@ -110,14 +117,49 @@ Senha: admin123456
 
 Todas as rotas abaixo usam o prefixo `/api`.
 
-| Método | Rota | Protegida | Descrição |
+| Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
-| `POST` | `/auth/login` | Não | Autentica o administrador e retorna um token JWT |
-| `POST` | `/users` | Sim | Cadastra um novo usuário administrador |
-| `GET` | `/users` | Sim | Lista usuários ativos; aceita `includeInactive=true` para incluir desativados |
-| `GET` | `/users/:id` | Sim | Consulta um usuário por ID; aceita `includeInactive=true` |
-| `PATCH` | `/users/:id` | Sim | Edita nome, e-mail e/ou senha de um usuário |
-| `DELETE` | `/users/:id` | Sim | Desativa um usuário com soft delete |
+| `POST` | `/auth/login` | Público | Autentica qualquer usuário ativo e retorna um token JWT |
+| `POST` | `/users` | `ADMIN` | Cadastra um novo usuário comum (`USER`) |
+| `GET` | `/users` | `ADMIN` | Lista usuários ativos; aceita `includeInactive=true` para incluir desativados |
+| `GET` | `/users/:id` | `ADMIN` | Consulta um usuário por ID; aceita `includeInactive=true` |
+| `PATCH` | `/users/:id` | `ADMIN` | Edita nome, e-mail e/ou senha de um usuário ativo |
+| `PATCH` | `/users/:id/promote` | `ADMIN` | Promove um usuário comum ativo para administrador |
+| `PATCH` | `/users/:id/activate` | `ADMIN` | Reativa um usuário desativado |
+| `DELETE` | `/users/:id` | `ADMIN` | Desativa um usuário ativo com soft delete |
+
+## Exemplos de uso
+
+Autenticação:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"admin123456"}'
+```
+
+Cadastro de usuário comum:
+
+```bash
+curl -X POST http://localhost:3000/api/users \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Maria Silva","email":"maria@example.com","password":"strongPassword123"}'
+```
+
+Promoção de usuário comum para administrador:
+
+```bash
+curl -X PATCH http://localhost:3000/api/users/<id>/promote \
+  -H "Authorization: Bearer <token>"
+```
+
+Reativação de usuário desativado:
+
+```bash
+curl -X PATCH http://localhost:3000/api/users/<id>/activate \
+  -H "Authorization: Bearer <token>"
+```
 
 ## Autenticação
 

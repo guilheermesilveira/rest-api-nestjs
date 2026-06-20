@@ -4,11 +4,11 @@ export class LoginResponseDto {
   @ApiProperty({
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.signature',
   })
-  accessToken: string;
+  accessToken!: string;
 
   @ApiProperty({ example: 'Bearer' })
-  tokenType: string;
+  tokenType!: string;
 
   @ApiProperty({ example: '1h' })
-  expiresIn: string;
+  expiresIn!: string;
 }

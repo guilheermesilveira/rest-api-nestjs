@@ -15,30 +15,30 @@ export enum UserRole {
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ length: 120 })
-  name: string;
+  name!: string;
 
   @Column({ length: 160, unique: true })
-  email: string;
+  email!: string;
 
   @Column({ name: 'password_hash', select: false })
-  passwordHash: string;
+  passwordHash!: string;
 
   @Column({
     default: UserRole.USER,
     enum: UserRole,
     type: 'enum',
   })
-  role: UserRole;
+  role!: UserRole;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date | null;
+  deletedAt!: Date | null;
 }

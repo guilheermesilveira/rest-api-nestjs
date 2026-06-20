@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: user-management-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: user_management
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: user-management-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: user_management
+      DB_SYNCHRONIZE: true
+      JWT_SECRET: change-this-secret
+      JWT_EXPIRES_IN: 1h
+      ADMIN_NAME: Administrador
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin123456
+    ports:
+      - '3000:3000'
+
+volumes:
+  postgres-data:

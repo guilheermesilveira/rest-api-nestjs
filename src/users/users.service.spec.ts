@@ -50,8 +50,8 @@ describe('UsersService', () => {
     };
 
     service = new UsersService(
-      repository as Repository<User>,
-      configService as ConfigService,
+      repository as unknown as Repository<User>,
+      configService as unknown as ConfigService,
     );
   });
 
